@@ -49,7 +49,6 @@ def endorser_app() -> FastAPI:
         middleware=middleware,
     )
     # mount the token endpoint
-    
     app.include_router(auth.router)
     
     # mount other endpoints, these will be secured by the above token endpoint

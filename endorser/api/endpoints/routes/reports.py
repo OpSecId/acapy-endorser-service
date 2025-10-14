@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from starlette import status
 from fastapi.security import OAuth2PasswordBearer
 
