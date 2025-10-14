@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from api.core.config import settings
 from api.endpoints.dependencies.jwt_security import AccessToken, create_access_token
 
-router = APIRouter()
+router = APIRouter(tags=["auth"])
 
 @router.post("/token", response_model=AccessToken)
 async def login_for_endorser_api_admin(

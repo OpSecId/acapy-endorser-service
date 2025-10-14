@@ -12,8 +12,7 @@ import time
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, APIRouter, Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import FastAPI
 from starlette.middleware import Middleware
 from starlette_context import plugins
 from starlette_context.middleware import RawContextMiddleware
@@ -51,22 +50,15 @@ def endorser_app() -> FastAPI:
     )
     # mount the token endpoint
     
-    app.include_router(auth.router, tags=["auth"])
+    app.include_router(auth.router)
     
     # mount other endpoints, these will be secured by the above token endpoint
-
-    router = APIRouter()
-    router.include_router(admin.router, prefix="/admin", tags=["admin"])
-    router.include_router(allow.router, prefix="/allow", tags=["allow"])
-    router.include_router(connections.router, prefix="/connections", tags=["connections"])
-    router.include_router(endorse.router, prefix="/endorse", tags=["endorse"])
-    router.include_router(reports.router, prefix="/reports", tags=["reports"])
+    app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin")
+    app.include_router(allow.router, prefix=f"{settings.API_V1_STR}/allow")
+    app.include_router(connections.router, prefix=f"{settings.API_V1_STR}/connections")
+    app.include_router(endorse.router, prefix=f"{settings.API_V1_STR}/endorse")
+    app.include_router(reports.router, prefix=f"{settings.API_V1_STR}/reports")
     
-    app.include_router(
-        router,
-        prefix=settings.API_V1_STR,
-        dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))]
-    )
     return app
 
 

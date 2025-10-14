@@ -4,11 +4,12 @@ import logging
 
 from fastapi import APIRouter
 from starlette import status
+from fastapi.security import OAuth2PasswordBearer
 
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["reports"], dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))])
 
 
 @router.get("/summary", status_code=status.HTTP_200_OK, response_model=dict)

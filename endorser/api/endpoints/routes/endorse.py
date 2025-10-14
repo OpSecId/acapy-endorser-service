@@ -26,9 +26,10 @@ from api.services.endorse import (
     reject_transaction,
 )
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
+from fastapi.security import OAuth2PasswordBearer
 
 
-router = APIRouter()
+router = APIRouter(tags=["endorse"], dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))])
 logger = logging.getLogger(__name__)
 
 

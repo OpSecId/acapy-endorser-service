@@ -18,11 +18,12 @@ from api.endpoints.models.configurations import (
     Configuration,
 )
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
+from fastapi.security import OAuth2PasswordBearer
 
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["admin"], dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))])
 
 
 @router.get("/config", status_code=status.HTTP_200_OK, response_model=dict)

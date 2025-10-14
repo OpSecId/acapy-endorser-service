@@ -24,10 +24,11 @@ from api.services.connections import (
     update_connection_info,
 )
 from api.acapy_utils import acapy_POST
+from fastapi.security import OAuth2PasswordBearer
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["connections"], dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))])
 
 
 @router.get("/", response_model=ConnectionList)

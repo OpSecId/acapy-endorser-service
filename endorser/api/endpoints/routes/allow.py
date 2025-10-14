@@ -43,8 +43,9 @@ from api.endpoints.models.allow import (
     AllowedLogEntryList,
 )
 from api.services.allow_lists import add_to_allow_list, updated_allowed
+from fastapi.security import OAuth2PasswordBearer
 
-router = APIRouter()
+router = APIRouter(tags=["allow"], dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))])
 logger = logging.getLogger(__name__)
 
 

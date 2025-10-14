@@ -29,7 +29,7 @@ from api.endpoints.models.endorse import EndorseTransaction
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["webhooks"])
 
 api_key_header = APIKeyHeader(
     name=settings.ACAPY_WEBHOOK_URL_API_KEY_NAME, auto_error=False
