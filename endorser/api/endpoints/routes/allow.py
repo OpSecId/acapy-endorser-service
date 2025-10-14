@@ -88,7 +88,7 @@ async def select_from_table(
 
 
 @router.post(
-    "/",
+    "/config",
     status_code=status.HTTP_200_OK,
     response_model=dict,
     description="Upload a new CSV config replacing the existing configuration.",
@@ -118,7 +118,7 @@ async def set_config(
 
 
 @router.put(
-    "/",
+    "/config",
     status_code=status.HTTP_200_OK,
     response_model=dict,
     description="Upload a new CSV config appending to the existing configuration.",
