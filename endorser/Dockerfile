@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir poetry
 ADD pyproject.toml poetry.lock ./
 RUN poetry install --without dev
 
-ADD ./endorser .
+ADD . .
 
 EXPOSE 5000
 ENTRYPOINT ["./docker-entrypoint.sh"]
