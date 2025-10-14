@@ -87,6 +87,66 @@ async def select_from_table(
     return (total_count, db_txn)
 
 
+@router.post(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=dict,
+    description="Upload a new CSV config replacing the existing configuration.",
+)
+async def set_config(
+    log_entry: Annotated[
+        UploadFile, File(description="List of log entries authorized to be published")
+    ] = None,
+    publish_did: Annotated[
+        UploadFile, File(description="List of DIDs authorized to become public")
+    ] = None,
+    schema: Annotated[
+        UploadFile, File(description="List of schemas authorized to be published")
+    ] = None,
+    credential_definition: Annotated[
+        UploadFile, File(description="List of creddefs authorized to be published")
+    ] = None,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Set new configuration by uploading CSVs, replacing the existing configuration."""
+    try:
+        return await update_full_config(
+            log_entry, publish_did, schema, credential_definition, db, True
+        )
+    except Exception as e:
+        raise HTTPException(status_code=db_to_http_exception(e), detail=str(e))
+
+
+@router.put(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=dict,
+    description="Upload a new CSV config appending to the existing configuration.",
+)
+async def append_config(
+    log_entry: Annotated[
+        UploadFile, File(description="List of log entries authorized to be published")
+    ] = None,
+    publish_did: Annotated[
+        UploadFile, File(description="List of DIDs authorized to become public")
+    ] = None,
+    schema: Annotated[
+        UploadFile, File(description="List of schemas authorized to be published")
+    ] = None,
+    credential_definition: Annotated[
+        UploadFile, File(description="List of authorized creddefs")
+    ] = None,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Append new configuration by uploading CSVs to the existing configuration."""
+    try:
+        return await update_full_config(
+            log_entry, publish_did, schema, credential_definition, db, False
+        )
+    except Exception as e:
+        raise HTTPException(status_code=db_to_http_exception(e), detail=str(e))
+
+
 @router.get(
     "/publish-did",
     status_code=status.HTTP_200_OK,
@@ -434,66 +494,6 @@ async def update_full_config(
     await db.commit()
     await updated_allowed(db)
     return modifications
-
-
-@router.post(
-    "/",
-    status_code=status.HTTP_200_OK,
-    response_model=dict,
-    description="Upload a new CSV config replacing the existing configuration.",
-)
-async def set_config(
-    log_entry: Annotated[
-        UploadFile, File(description="List of log entries authorized to be published")
-    ] = None,
-    publish_did: Annotated[
-        UploadFile, File(description="List of DIDs authorized to become public")
-    ] = None,
-    schema: Annotated[
-        UploadFile, File(description="List of schemas authorized to be published")
-    ] = None,
-    credential_definition: Annotated[
-        UploadFile, File(description="List of creddefs authorized to be published")
-    ] = None,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """Set new configuration by uploading CSVs, replacing the existing configuration."""
-    try:
-        return await update_full_config(
-            log_entry, publish_did, schema, credential_definition, db, True
-        )
-    except Exception as e:
-        raise HTTPException(status_code=db_to_http_exception(e), detail=str(e))
-
-
-@router.put(
-    "/",
-    status_code=status.HTTP_200_OK,
-    response_model=dict,
-    description="Upload a new CSV config appending to the existing configuration.",
-)
-async def append_config(
-    log_entry: Annotated[
-        UploadFile, File(description="List of log entries authorized to be published")
-    ] = None,
-    publish_did: Annotated[
-        UploadFile, File(description="List of DIDs authorized to become public")
-    ] = None,
-    schema: Annotated[
-        UploadFile, File(description="List of schemas authorized to be published")
-    ] = None,
-    credential_definition: Annotated[
-        UploadFile, File(description="List of authorized creddefs")
-    ] = None,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """Append new configuration by uploading CSVs to the existing configuration."""
-    try:
-        return await update_full_config(
-            log_entry, publish_did, schema, credential_definition, db, False
-        )
-    except Exception as e:
-        raise HTTPException(status_code=db_to_http_exception(e), detail=str(e))
 
 
 @router.get(
