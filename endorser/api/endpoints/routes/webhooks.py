@@ -71,27 +71,6 @@ async def get_api_key(
             status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials"
         )
 
-
-def get_webhookapp() -> FastAPI:
-    """Create and return a FastAPI application for handling webhooks.
-
-    The application is configured with the specified title, description, debug
-    settings, and middleware. It includes a router for managing webhook-related
-    endpoints.
-
-    Returns:
-        FastAPI: A configured FastAPI application instance.
-    """
-    application = FastAPI(
-        title="WebHooks",
-        description="Endpoints for Aca-Py WebHooks",
-        debug=settings.DEBUG,
-        middleware=None,
-    )
-    application.include_router(router, prefix="")
-    return application
-
-
 @router.post("/topic/{topic}/", response_model=dict | Connection | EndorseTransaction)
 async def process_webhook(
     topic: WebhookTopicType,
