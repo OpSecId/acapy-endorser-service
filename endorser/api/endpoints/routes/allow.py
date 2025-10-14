@@ -410,6 +410,7 @@ async def update_allowed_config(k, v, db):
 
 
 async def update_full_config(
+    log_entry: Optional[UploadFile],
     publish_did: Optional[UploadFile],
     schema: Optional[UploadFile],
     credential_definition: Optional[UploadFile],
@@ -418,6 +419,7 @@ async def update_full_config(
 ) -> dict:
     """Update full configuration, possibly deleting existing entries."""
     correlated_tables = {
+        log_entry: AllowedLogEntry,
         publish_did: AllowedPublicDid,
         schema: AllowedSchema,
         credential_definition: AllowedCredentialDefinition,
@@ -440,6 +442,9 @@ async def update_full_config(
     description="Upload a new CSV config replacing the existing configuration.",
 )
 async def set_config(
+    log_entry: Annotated[
+        UploadFile, File(description="List of log entries authorized to be published")
+    ] = None,
     publish_did: Annotated[
         UploadFile, File(description="List of DIDs authorized to become public")
     ] = None,
@@ -454,7 +459,7 @@ async def set_config(
     """Set new configuration by uploading CSVs, replacing the existing configuration."""
     try:
         return await update_full_config(
-            publish_did, schema, credential_definition, db, True
+            log_entry, publish_did, schema, credential_definition, db, True
         )
     except Exception as e:
         raise HTTPException(status_code=db_to_http_exception(e), detail=str(e))
@@ -467,6 +472,9 @@ async def set_config(
     description="Upload a new CSV config appending to the existing configuration.",
 )
 async def append_config(
+    log_entry: Annotated[
+        UploadFile, File(description="List of log entries authorized to be published")
+    ] = None,
     publish_did: Annotated[
         UploadFile, File(description="List of DIDs authorized to become public")
     ] = None,
@@ -481,7 +489,7 @@ async def append_config(
     """Append new configuration by uploading CSVs to the existing configuration."""
     try:
         return await update_full_config(
-            publish_did, schema, credential_definition, db, False
+            log_entry, publish_did, schema, credential_definition, db, False
         )
     except Exception as e:
         raise HTTPException(status_code=db_to_http_exception(e), detail=str(e))
