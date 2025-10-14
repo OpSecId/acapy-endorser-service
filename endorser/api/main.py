@@ -65,8 +65,7 @@ def endorser_app() -> FastAPI:
     app.include_router(
         router,
         prefix=settings.API_V1_STR,
-        dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))],
-        tags=["endorser"],
+        dependencies=[Depends(OAuth2PasswordBearer(tokenUrl="token"))]
     )
     return app
 
