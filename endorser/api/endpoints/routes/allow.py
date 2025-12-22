@@ -13,8 +13,8 @@ Usage:
 
 """
 
-from codecs import iterdecode
 import logging
+from codecs import iterdecode
 from csv import DictReader
 from typing import Annotated, Optional, TypeVar
 from uuid import UUID
@@ -30,20 +30,20 @@ from starlette.status import HTTP_409_CONFLICT, HTTP_500_INTERNAL_SERVER_ERROR
 from api.db.errors import AlreadyExists
 from api.db.models.allow import (
     AllowedCredentialDefinition,
-    AllowedSchema,
     AllowedLogEntry,
+    AllowedSchema,
 )
 from api.db.models.base import BaseModel
 from api.endpoints.dependencies.db import get_db
+from api.endpoints.dependencies.jwt_security import check_access_token
 from api.endpoints.models.allow import (
     AllowedCredentialDefinitionList,
+    AllowedLogEntryList,
     AllowedPublicDid,
     AllowedPublicDidList,
     AllowedSchemaList,
-    AllowedLogEntryList,
 )
 from api.services.allow_lists import add_to_allow_list, updated_allowed
-from api.endpoints.dependencies.jwt_security import check_access_token
 
 router = APIRouter(tags=["allow"], dependencies=[Depends(check_access_token)])
 logger = logging.getLogger(__name__)
@@ -95,16 +95,20 @@ async def select_from_table(
 )
 async def set_config(
     log_entry: Annotated[
-        UploadFile, File(description="List of log entries authorized to be published")
+        Optional[UploadFile],
+        File(description="List of log entries authorized to be published"),
     ] = None,
     publish_did: Annotated[
-        UploadFile, File(description="List of DIDs authorized to become public")
+        Optional[UploadFile],
+        File(description="List of DIDs authorized to become public"),
     ] = None,
     schema: Annotated[
-        UploadFile, File(description="List of schemas authorized to be published")
+        Optional[UploadFile],
+        File(description="List of schemas authorized to be published"),
     ] = None,
     credential_definition: Annotated[
-        UploadFile, File(description="List of creddefs authorized to be published")
+        Optional[UploadFile],
+        File(description="List of creddefs authorized to be published"),
     ] = None,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -125,16 +129,19 @@ async def set_config(
 )
 async def append_config(
     log_entry: Annotated[
-        UploadFile, File(description="List of log entries authorized to be published")
+        Optional[UploadFile],
+        File(description="List of log entries authorized to be published"),
     ] = None,
     publish_did: Annotated[
-        UploadFile, File(description="List of DIDs authorized to become public")
+        Optional[UploadFile],
+        File(description="List of DIDs authorized to become public"),
     ] = None,
     schema: Annotated[
-        UploadFile, File(description="List of schemas authorized to be published")
+        Optional[UploadFile],
+        File(description="List of schemas authorized to be published"),
     ] = None,
     credential_definition: Annotated[
-        UploadFile, File(description="List of authorized creddefs")
+        Optional[UploadFile], File(description="List of authorized creddefs")
     ] = None,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -478,20 +485,47 @@ async def update_full_config(
     db: AsyncSession,
     delete_contents: bool,
 ) -> dict:
-    """Update full configuration, possibly deleting existing entries."""
-    correlated_tables = {
-        log_entry: AllowedLogEntry,
-        publish_did: AllowedPublicDid,
-        schema: AllowedSchema,
-        credential_definition: AllowedCredentialDefinition,
-    }
-    modifications = {}
-    for k, v in correlated_tables.items():
-        if k:
+    """Update full configuration, possibly deleting existing entries.
+
+    Allows callers to provide any subset of the four CSV files; only the provided
+    files are processed and, when `delete_contents` is True, only the corresponding
+    tables are cleared before insert.
+    """
+    provided_configs = [
+        (log_entry, AllowedLogEntry),
+        (publish_did, AllowedPublicDid),
+        (schema, AllowedSchema),
+        (credential_definition, AllowedCredentialDefinition),
+    ]
+    # Filter out None values and files with empty filenames (empty form fields)
+    provided_configs = [
+        (file, model)
+        for file, model in provided_configs
+        if file is not None and file.filename
+    ]
+
+    if not provided_configs:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one configuration file must be provided.",
+        )
+
+    try:
+        modifications: dict[str, dict] = {}
+        for file_obj, model in provided_configs:
             if delete_contents:
-                await db.execute(delete(v))
-            modifications[v.__name__] = await update_allowed_config(k, v, db)
-    await db.commit()
+                await db.execute(delete(model))
+            modifications[model.__name__] = await update_allowed_config(
+                file_obj, model, db
+            )
+
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+
+    # Reprocess pending transactions after successful commit
+    # This runs outside the transaction since it does its own commit
     await updated_allowed(db)
     return modifications
 
