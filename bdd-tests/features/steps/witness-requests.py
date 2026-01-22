@@ -72,7 +72,7 @@ def step_impl(context, author: str):
 def step_impl(context, author: str):
     """Publish initial log entry."""
     identifier = str(uuid.uuid4())
-    assert (response := call_author_service(
+    assert (call_author_service(
         context,
         author,
         POST,
@@ -95,7 +95,6 @@ def step_impl(context):
 
 @then('"{author}" has a published did')
 def step_impl(context, author: str):
-    pass
     
     # Assert DID is registered locally
     assert (results := call_author_service(
